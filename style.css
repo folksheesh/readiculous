@@ -1,0 +1,151 @@
+body {
+    font-family: 'Open Sans', sans-serif;
+    background: #fff;
+    color: #333;
+    margin: 0;
+  }
+  
+  .main-wrapper {
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  .left-content {
+    overflow-y: auto;
+    height: 100vh;
+    background-color: #fff;
+  }
+  
+  .book-detail {
+    background-color: #2b1544;
+    transition: transform 0.5s ease;
+    transform: translateX(100%);
+    height: 100vh;
+    overflow-y: auto;
+    position: relative;
+  }
+  
+  .book-detail.active {
+    transform: translateX(0%);
+  }
+  
+  /* Highlight section */
+  .highlight {
+    background-color: #37295a;
+    color: #ffffe7;
+    padding: 4rem 3rem;
+  }
+  
+  .highlight h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 4rem;
+    line-height: 1.1;
+  }
+  
+  .menu {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+    gap: 1rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-top: 1rem;
+  }
+  
+  .menu a {
+    color: #ffffe7;
+    text-decoration: none;
+  }
+  
+  .menu .active {
+    color: white;
+    border-left: 4px solid white;
+    padding-left: 0.5rem;
+  }
+  
+  /* Popular books section */
+  .popular {
+    background: #ffffe7;
+    padding: 2.5rem 3rem;
+  }
+  
+  .popular h3 {
+    color: #37295a;
+    margin-bottom: 2rem;
+    font-weight: bold;
+    font-size: 1.1rem;
+  }
+  
+  .book-grid {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+  
+  .book {
+    width: 180px;
+    cursor: pointer;
+  }
+  
+  .book img {
+    width: 100%;
+    height: auto;
+    border-radius: 5px;
+  }
+  
+  .book .author {
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    color: #333;
+  }
+  
+  .book .title {
+    font-weight: bold;
+    color: #f15b4a;
+    font-size: 1rem;
+  }
+
+  .book-detail {
+    display: none;
+    background-color: #222;
+}
+
+.book-detail.active {
+    display: block;
+}
+
+.book {
+    cursor: pointer;
+    margin-bottom: 1rem;
+}
+
+.book img {
+    width: 100%;
+    max-width: 180px;
+    height: auto;
+    object-fit: cover;
+}
+
+.main-wrapper {
+    transition: all 0.3s ease;
+}
+
+.main-wrapper.split .left-content {
+    width: 50%;
+}
+
+.main-wrapper.split .book-detail {
+    display: block;
+    width: 50%;
+}
+
+.main-wrapper:not(.split) .book-detail {
+    display: none;
+}
+
+.book-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+  

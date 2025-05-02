@@ -40,15 +40,15 @@
                     <h3 class="mb-4">BOOK CATEGORIES</h3>
                     <!-- Fantasy -->
                     <h5>Fantasy</h5>
-                    <div id="fantasy" class="row row-cols-2 row-cols-sm-3 row-cols-md-6 g-3 mb-4"></div>
+                    <div id="fantasy" class="row"></div>
 
                     <!-- Horror -->
                     <h5>Horror</h5>
-                    <div id="horror" class="row row-cols-2 row-cols-sm-3 row-cols-md-6 g-3 mb-4"></div>
+                    <div id="horror" class="row"></div>
 
                     <!-- Romance -->
                     <h5>Romance</h5>
-                    <div id="romance" class="row row-cols-2 row-cols-sm-3 row-cols-md-6 g-3 mb-4"></div>
+                    <div id="romance" class="row"></div>
                 </div>
             </section>
 
@@ -56,13 +56,18 @@
 
         <!-- RIGHT CONTENT: Book Detail -->
         <div class="book-detail p-5 text-white" id="book-detail">
-            <button class="btn btn-sm btn-light mb-4" onclick="hideDetail()">← Back</button>
-            <h6 class="text-warning">EDITORS WEEKLY CHOICE</h6>
-            <img id="detail-img" src="" class="img-fluid mb-3" style="max-height: 300px;" />
-            <h5 id="detail-author"></h5>
-            <h2 id="detail-title"></h2>
-            <p id="detail-description">Click a book to see more info.</p>
-            <button class="btn btn-outline-light">Read review</button>
+            <!-- <h6 class="text-warning">EDITORS WEEKLY CHOICE</h6> -->
+            <img id="detail-img" src="" class="img-fluid mx-auto d-block mb-5" style="max-height: 300px;" />
+            <div class="row mt-5">
+                <div class="col-5">
+                    <h5 id="detail-author"></h5>
+                    <h2 id="detail-title"></h2>
+                    <button class="btn btn-outline-light">Read review</button>
+                </div>
+                <div class="col-7">
+                    <p id="detail-description">Click a book to see more info.</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -73,32 +78,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
-    <script>
-        const categories = ['fantasy', 'horror', 'romance'];
-      
-        categories.forEach(category => {
-          fetch(`https://openlibrary.org/subjects/${category}.json?limit=6`)
-            .then(response => response.json())
-            .then(data => {
-              const container = document.getElementById(category);
-              data.works.slice(0, 6).forEach(book => {
-                const coverUrl = book.cover_id 
-                  ? `https://covers.openlibrary.org/b/id/${book.cover_id}-M.jpg`
-                  : 'https://via.placeholder.com/120x180?text=No+Image';
-      
-                const bookElement = document.createElement('div');
-                bookElement.classList.add('col', 'text-center');
-                bookElement.innerHTML = `
-                  <img src="${coverUrl}" class="rounded shadow-sm mb-2" style="width: 160px; height: 220px; object-fit: cover;">
-                  <p class="small">${book.title}</p>
-                `;
-                container.appendChild(bookElement);
-              });
-            })
-            .catch(error => console.error('Error fetching books:', error));
-        });
-      </script>
-      
+    <script src="script.js"></script>
 </body>
 
 </html>

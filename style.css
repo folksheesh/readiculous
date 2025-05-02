@@ -1,39 +1,72 @@
-body {
+/* Global */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* hides global page scroll */
     font-family: 'Open Sans', sans-serif;
     background: #fff;
     color: #333;
-    margin: 0;
   }
   
+  /* Layout */
   .main-wrapper {
+    display: flex;
     height: 100vh;
     overflow: hidden;
+    transition: all 0.5s ease;
   }
   
+  .main-wrapper.split .left-content {
+    width: 100%;
+  }
+  
+  .main-wrapper.split .book-detail {
+    display: block;
+    width: 70%;
+    transform: translateX(0%);
+  }
+  
+  .main-wrapper:not(.split) .book-detail {
+    display: none;
+  }
+  
+  /* Left Content */
   .left-content {
-    overflow-y: auto;
+    display: flex;
+    flex-wrap: wrap;
     height: 100vh;
+    overflow-y: auto;
     background-color: #fff;
   }
   
+  .left-content::-webkit-scrollbar {
+    display: none;
+  }
+  
   .book-detail {
-    background-color: #2b1544;
-    transition: transform 0.5s ease;
-    transform: translateX(100%);
-    height: 100vh;
-    overflow-y: auto;
     position: relative;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 70%;
+    background-color: #37295a;
+    color: #fff;
+    z-index: 1000;
   }
   
   .book-detail.active {
     transform: translateX(0%);
+    opacity: 1;
+    pointer-events: auto;
   }
   
-  /* Highlight section */
+  /* Highlight Section */
   .highlight {
-    background-color: #37295a;
+    background-color: #f7523e;
     color: #ffffe7;
     padding: 4rem 3rem;
+    width: 100%;
   }
   
   .highlight h1 {
@@ -42,6 +75,7 @@ body {
     line-height: 1.1;
   }
   
+  /* Menu Navigation */
   .menu {
     display: flex;
     flex-direction: column;
@@ -53,20 +87,23 @@ body {
   }
   
   .menu a {
-    color: #ffffe7;
     text-decoration: none;
+    color: #ffffe769;
   }
   
-  .menu .active {
+  .menu .nav-link.active,
+  .nav-link:hover {
     color: white;
     border-left: 4px solid white;
     padding-left: 0.5rem;
   }
   
-  /* Popular books section */
+  /* Popular Books Section */
   .popular {
     background: #ffffe7;
     padding: 2.5rem 3rem;
+    width: 100%;
+    box-sizing: border-box; /* Menyertakan padding dan border dalam perhitungan lebar */
   }
   
   .popular h3 {
@@ -76,21 +113,31 @@ body {
     font-size: 1.1rem;
   }
   
+  /* Book Grid */
   .book-grid {
     display: flex;
-    gap: 2rem;
     flex-wrap: wrap;
+    gap: 1rem;
   }
   
   .book {
     width: 180px;
     cursor: pointer;
+    margin-bottom: 1rem;
   }
   
   .book img {
     width: 100%;
+    max-width: 180px;
     height: auto;
+    object-fit: cover;
     border-radius: 5px;
+  }
+  
+  .book .title {
+    font-weight: bold;
+    color: #f7523e;
+    font-size: 1rem;
   }
   
   .book .author {
@@ -99,53 +146,16 @@ body {
     color: #333;
   }
   
-  .book .title {
-    font-weight: bold;
-    color: #f15b4a;
-    font-size: 1rem;
+  /* Responsive Adjustments */
+  .left-content .book {
+    width: 16.66%; /* 100 / 6 */
   }
-
-  .book-detail {
-    display: none;
-    background-color: #222;
-}
-
-.book-detail.active {
-    display: block;
-}
-
-.book {
-    cursor: pointer;
-    margin-bottom: 1rem;
-}
-
-.book img {
+  
+  #main-wrapper.split .left-content .book {
+    width: 33.33%; /* 100 / 3 */
+  }
+  
+  #main-wrapper.split .highlight {
     width: 100%;
-    max-width: 180px;
-    height: auto;
-    object-fit: cover;
-}
-
-.main-wrapper {
-    transition: all 0.3s ease;
-}
-
-.main-wrapper.split .left-content {
-    width: 50%;
-}
-
-.main-wrapper.split .book-detail {
-    display: block;
-    width: 50%;
-}
-
-.main-wrapper:not(.split) .book-detail {
-    display: none;
-}
-
-.book-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
+  }
   

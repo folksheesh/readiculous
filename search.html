@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Search Books</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+</head>
+
+<body>
+  <div class="main-wrapper d-flex" id="main-wrapper">
+    <!-- LEFT SIDE -->
+    <div class="left-content w-100">
+      <div class="container py-5">
+        <a href="home.html" class="btn btn-secondary mb-4">← Back</a>
+        <input type="text" id="searchInput" class="form-control mb-4" placeholder="Search by title or author...">
+        <div id="searchResults" class="row g-4">
+          <!-- Search results -->
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT SIDE: Book Detail -->
+    <div class="book-detail p-5 text-white" id="book-detail">
+      <img id="detail-img" src="" class="img-fluid mx-auto d-block mb-5" style="max-height: 300px;" />
+      <div class="row mt-5">
+        <div class="col-5">
+          <h5 id="detail-author"></h5>
+          <h2 id="detail-title"></h2>
+          <button class="btn btn-outline-light">Read review</button>
+        </div>
+        <div class="col-7">
+          <p id="detail-description">Click a book to see more info.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="search.js"></script>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</body>
+
+</html>

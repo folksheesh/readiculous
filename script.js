@@ -83,3 +83,4 @@ document.addEventListener('click', function (e) {
         detailPanel.classList.remove('active');
     }
 });
+

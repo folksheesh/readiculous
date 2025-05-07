@@ -17,24 +17,32 @@ function addToBookList(book, coverUrl) {
   const author = book.authors?.map(a => a.name).join(', ') || 'Unknown Author';
   const element = renderBook(book, coverUrl);
 
-  // Tambahkan event untuk menampilkan detail buku
+  const bookData = {
+    title: book.title.toLowerCase(),
+    author: author.toLowerCase(),
+    key: book.key,
+    image: coverUrl,
+    element
+  };
+
   element.addEventListener('click', () => {
     showDetail(coverUrl, book.title, author, book.key);
   });
 
-  allBooks.push({
-    title: book.title.toLowerCase(),
-    author: author.toLowerCase(),
-    element
-  });
+  allBooks.push(bookData);
 }
 
 function displayResults(keyword) {
   searchResults.innerHTML = '';
   const lowerKeyword = keyword.toLowerCase();
+
   allBooks.forEach(book => {
     if (book.title.includes(lowerKeyword) || book.author.includes(lowerKeyword)) {
-      searchResults.appendChild(book.element.cloneNode(true));
+      const clone = book.element.cloneNode(true);
+      clone.addEventListener('click', () => {
+        showDetail(book.image, book.title, book.author, book.key);
+      });
+      searchResults.appendChild(clone);
     }
   });
 }
@@ -54,7 +62,8 @@ categories.forEach(category => {
           : 'https://via.placeholder.com/140x200?text=No+Image';
         addToBookList(book, coverUrl);
       });
-    });
+    })
+    .catch(err => console.error('Failed to fetch books:', err));
 });
 
 // Fungsi untuk menampilkan detail buku
@@ -93,4 +102,3 @@ document.addEventListener('click', function (e) {
     detailPanel.classList.remove('active');
   }
 });
-

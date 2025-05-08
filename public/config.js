@@ -4,15 +4,14 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth
 import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAgVHlTuzoAE8UG-QCSTEx4vPkdK7DwZVA",
-    authDomain: "folksy-67e76.firebaseapp.com",
-    projectId: "folksy-67e76",
-    storageBucket: "folksy-67e76.appspot.com", // typo fixed: firebasestorage**.app** → **.appspot.com**
-    messagingSenderId: "931699818506",
-    appId: "1:931699818506:web:31048a7094d0a112f2dff3",
-    measurementId: "G-YBTC8D22MM"
-};
-
+    apiKey: "AIzaSyAHH9sA6Aw02jFEj67RcL6ekFg7rdh_n_c",
+    authDomain: "readiculous-9e59d.firebaseapp.com",
+    projectId: "readiculous-9e59d",
+    storageBucket: "readiculous-9e59d.firebasestorage.app",
+    messagingSenderId: "137985364885",
+    appId: "1:137985364885:web:e7175c5cc162dacd501c9c",
+    measurementId: "G-7LYGQNZZFM"
+  };
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);

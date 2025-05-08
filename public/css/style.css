@@ -93,7 +93,7 @@ body {
   margin-top: 1rem;
 }
 
-.nav-link{
+.nav-link {
   cursor: pointer;
 }
 
@@ -201,6 +201,7 @@ body {
   width: 100%;
   color: #ffffe7;
   text-align: end;
+  cursor: pointer;
 }
 
 .reviews {
@@ -246,40 +247,66 @@ body {
   display: flex;
   justify-content: space-between;
   width: 100%;
-  align-items: center; /* Vertically center the items */
+  align-items: center;
+  /* Vertically center the items */
 }
 
-.add-review{
+.add-review {
   text-decoration: none;
   color: #ffffe7;
   cursor: pointer;
   font-weight: bold;
 }
 
-.add-review:hover{
+.add-review:hover {
   color: rgb(54, 165, 255);
 }
 
-.left{
+.left {
   color: #ffffe7;
 }
 
 .about {
   min-height: 53%;
-  background-color: #ffffe7; /* same as Bootstrap's light background */
+  background-color: #ffffe7;
+  /* same as Bootstrap's light background */
   width: 100%;
 }
 
 .about h2 {
-  color: #343a40; /* dark gray */
+  color: #343a40;
+  /* dark gray */
   color: #37295a;
 
 }
 
 .about p {
-  color: #6c757d; /* muted text */
+  color: #6c757d;
+  /* muted text */
 }
 
 .text-purple {
   color: #37295a;
+}
+
+/* Styling untuk dropdown */
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 10px;
+  list-style: none;
+}
+
+.dropdown.open .dropdown-menu {
+  display: block;
+}
+
+.dropdown {
+  position: relative;
 }

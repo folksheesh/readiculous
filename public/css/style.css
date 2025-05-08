@@ -93,6 +93,10 @@ body {
   margin-top: 1rem;
 }
 
+.nav-link{
+  cursor: pointer;
+}
+
 .menu a {
   text-decoration: none;
   color: #ffffe769;
@@ -105,8 +109,8 @@ body {
   padding-left: 0.5rem;
 }
 
-/* Popular Books Section */
-.popular {
+.discover {
+  min-height: 53%;
   background: #ffffe7;
   padding: 2.5rem 3rem;
   width: 100%;
@@ -114,7 +118,17 @@ body {
   /* Menyertakan padding dan border dalam perhitungan lebar */
 }
 
-.popular h3 {
+/* genre Books Section */
+.genre {
+  min-height: 53%;
+  background: #ffffe7;
+  padding: 2.5rem 3rem;
+  width: 100%;
+  box-sizing: border-box;
+  /* Menyertakan padding dan border dalam perhitungan lebar */
+}
+
+.genre h3 {
   color: #37295a;
   margin-bottom: 2rem;
   font-weight: bold;
@@ -248,4 +262,24 @@ body {
 
 .left{
   color: #ffffe7;
+}
+
+.about {
+  min-height: 53%;
+  background-color: #ffffe7; /* same as Bootstrap's light background */
+  width: 100%;
+}
+
+.about h2 {
+  color: #343a40; /* dark gray */
+  color: #37295a;
+
+}
+
+.about p {
+  color: #6c757d; /* muted text */
+}
+
+.text-purple {
+  color: #37295a;
 }

@@ -133,6 +133,7 @@ document.addEventListener('click', function (e) {
     }
 });
 
+
 // Ensure renderReviews function is called if defined
 if (typeof renderReviews === 'function') {
     renderReviews();
@@ -141,3 +142,44 @@ if (typeof renderReviews === 'function') {
 
 console.log('Review Form:', reviewForm);
 console.log('Book ID at submit:', reviewForm ? reviewForm.getAttribute('book-id') : 'No book-id');
+
+const discoverBtn = document.getElementById("discoverBtn");
+const genreBtn = document.getElementById("genreBtn");
+const aboutBtn = document.getElementById("aboutBtn");
+
+const discoverSection = document.getElementById("discover");
+const genreSection = document.getElementById("genre");
+const aboutSection = document.getElementById("about");
+
+
+
+// Saat klik DISCOVER
+discoverBtn.addEventListener("click", function (e) {
+    e.preventDefault(); // supaya tidak reload halaman
+    discoverSection.style.display = "block";
+    genreSection.style.display = "none";
+    aboutSection.style.display = "none";
+});
+
+// Saat klik genre
+genreBtn.addEventListener("click", function (e) {
+    e.preventDefault();
+    discoverSection.style.display = "none";
+    aboutSection.style.display = "none";
+    genreSection.style.display = "block";
+});
+
+// Saat klik about
+aboutBtn.addEventListener("click", function (e) {
+    e.preventDefault();
+    discoverSection.style.display = "none";
+    aboutSection.style.display = "block";
+    genreSection.style.display = "none";
+});
+
+// Default: tampilkan genre, sembunyikan discover
+window.addEventListener("DOMContentLoaded", function () {
+    discoverSection.style.display = "none";
+    aboutSection.style.display = "none";
+    genreSection.style.display = "block";
+});

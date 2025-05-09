@@ -238,3 +238,11 @@ function updateDescription(description) {
     };
 }
 
+const loginRedirectBtn = document.getElementById("loginRedirectBtn");
+
+if (loginRedirectBtn) {
+    loginRedirectBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        window.location.href = "login.html"; // redirect to your login page
+    });
+}

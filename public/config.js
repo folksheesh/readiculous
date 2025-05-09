@@ -19,3 +19,5 @@ const db = getFirestore(app);
 // Supaya bisa diakses dari file lain
 window.auth = auth;
 window.db = db;
+
+export { firebaseConfig };

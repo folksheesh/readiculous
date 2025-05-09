@@ -1,14 +1,20 @@
-import { onAuthStateChanged, getAuth } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-import { renderReviews } from './reviews.js';
+// Import Firebase and required methods
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+import { renderReviews } from './reviews.js'; // Assuming renderReviews is in reviews.js
+
+// Import the Firebase configuration from config.js
+import { firebaseConfig } from './config.js';
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
 let currentBookKey = null; // Global variable to store current book key
+let currentUser = null; // Store current user state
 
 window.addEventListener("DOMContentLoaded", function () {
-    const auth = getAuth();
-
-    const userDropdown = document.getElementById('userDropdown');
-    const dropdownUsername = document.getElementById('dropdownUsername');
-    const usernameDisplay = document.getElementById('usernameDisplay');
+    const usernameElement = document.getElementById('username');
     const logoutBtn = document.getElementById('logoutBtn');
 
     const discoverBtn = document.getElementById("discoverBtn");
@@ -24,37 +30,60 @@ window.addEventListener("DOMContentLoaded", function () {
     aboutSection.style.display = "none";
     genreSection.style.display = "block";
 
-
-
     // Firebase Auth state listener
     onAuthStateChanged(auth, (user) => {
+        currentUser = user; // Update current user state
+        if (!usernameElement) return;
+
         if (user) {
             const username = user.displayName || user.email;
-            dropdownUsername.textContent = `Hi, ${username}`;
-            userDropdown.style.display = "block";
-            if (usernameDisplay) usernameDisplay.style.display = "none";
+            usernameElement.textContent = `Hi, ${username}`;
+            usernameElement.style.cursor = "pointer";
+
+            // Tambahkan kelas dropdown
+            usernameElement.classList.add('dropdown-toggle');
+            usernameElement.setAttribute('data-bs-toggle', 'dropdown');
+            usernameElement.setAttribute('aria-expanded', 'false');
+
+            // Pastikan container dropdown tersedia
+            const dropdownMenu = document.getElementById('userDropdown');
+            if (dropdownMenu) dropdownMenu.style.display = 'block';
+
+            usernameElement.onclick = null; // biar default Bootstrap behavior
         } else {
-            if (dropdownUsername) dropdownUsername.textContent = "";
-            userDropdown.style.display = "none";
-            if (usernameDisplay) {
-                usernameDisplay.textContent = "Login / Register";
-                usernameDisplay.style.display = "inline-block";
-                usernameDisplay.onclick = () => window.location.href = "home.html";
-            }
+            usernameElement.textContent = "Login / Register";
+            usernameElement.style.cursor = "pointer";
+
+            // Hapus kelas dropdown
+            usernameElement.classList.remove('dropdown-toggle');
+            usernameElement.removeAttribute('data-bs-toggle');
+            usernameElement.removeAttribute('aria-expanded');
+            usernameElement.classList.add('login-hover'); // tambahkan class hover
+
+
+            // Sembunyikan dropdown jika ada
+            const dropdownMenu = document.getElementById('userDropdown');
+            if (dropdownMenu) dropdownMenu.style.display = 'none';
+
+            usernameElement.onclick = () => {
+                window.location.href = "login.html";
+            };
         }
     });
 
+
     // Logout functionality
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', function (e) {
-            e.preventDefault();
-            auth.signOut().then(() => {
-                window.location.href = 'home.html';
-            }).catch((error) => {
-                console.error("Logout error:", error);
-            });
+    logoutBtn.addEventListener("click", function (e) {
+        e.preventDefault(); // prevent link behavior
+
+        // Use signOut from modular Firebase SDK
+        signOut(auth).then(() => {
+            console.log("User signed out.");
+            window.location.href = "index.html"; // redirect to login or home page
+        }).catch((error) => {
+            console.error("Logout error:", error);
         });
-    }
+    });
 
     // Menu active toggle
     document.querySelectorAll('.menu .nav-link').forEach(link => {
@@ -108,7 +137,7 @@ window.addEventListener("DOMContentLoaded", function () {
                     const bookElement = document.createElement('div');
                     bookElement.classList.add('text-center', 'book');
                     bookElement.style.cursor = 'pointer';
-                    bookElement.innerHTML = `
+                    bookElement.innerHTML = ` 
                         <img src="${coverUrl}" class="rounded shadow-sm mb-2" style="width: 140px; height: 220px; object-fit: cover;">
                         <p class="small text-muted">${author}</p>
                         <p class="small fw-semibold mb-0">${title}</p>
@@ -144,16 +173,12 @@ window.addEventListener("DOMContentLoaded", function () {
     }
 });
 
+// Show book detail function
 function showDetail(image, title, author, key) {
     currentBookKey = key;
-    console.log('Current Book Key:', currentBookKey);
-
     const reviewForm = document.getElementById('reviewForm');
     if (reviewForm) {
         reviewForm.setAttribute('book-id', key);
-        console.log('Review Form found, book-id set to:', key);
-    } else {
-        console.error('Review Form not found!');
     }
 
     // Update detail UI
@@ -165,6 +190,7 @@ function showDetail(image, title, author, key) {
     document.getElementById('main-wrapper').classList.add('split');
     document.getElementById('book-detail').classList.add('active');
 
+    // Render reviews based on book key
     renderReviews(key);
 
     // Fetch description from OpenLibrary
@@ -182,24 +208,33 @@ function showDetail(image, title, author, key) {
         });
 }
 
-function updateDescription(desc) {
-    const maxLength = 250;
-    const descElem = document.getElementById('detail-description');
-    if (desc.length > maxLength) {
-        const shortDesc = desc.slice(0, maxLength) + '...';
+// Update description in UI
+function updateDescription(description) {
+    const descElement = document.getElementById('detail-description');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
 
-        descElem.innerHTML = `
-            <span id="desc-text">${shortDesc}</span>
-            <button id="toggle-desc" style="background:none;border:none;color:wheat;cursor:pointer;">Read More</button>
-        `;
+    const maxLength = 300;
+    let isExpanded = false;
 
-        let expanded = false;
-        document.getElementById('toggle-desc').addEventListener('click', () => {
-            expanded = !expanded;
-            document.getElementById('desc-text').textContent = expanded ? desc : shortDesc;
-            document.getElementById('toggle-desc').textContent = expanded ? 'Read Less' : 'Read More';
-        });
-    } else {
-        descElem.textContent = desc;
-    }
+    const shortDesc = description.length > maxLength
+        ? description.slice(0, maxLength) + "..."
+        : description;
+
+    // Initial state
+    descElement.textContent = shortDesc;
+    loadMoreBtn.style.display = description.length > maxLength ? 'inline' : 'none';
+    loadMoreBtn.textContent = "Load More";
+
+    // Button click handler
+    loadMoreBtn.onclick = () => {
+        isExpanded = !isExpanded;
+        if (isExpanded) {
+            descElement.textContent = description;
+            loadMoreBtn.textContent = "Load Less";
+        } else {
+            descElement.textContent = shortDesc;
+            loadMoreBtn.textContent = "Load More";
+        }
+    };
 }
+

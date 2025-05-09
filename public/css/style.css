@@ -202,7 +202,9 @@ body {
   color: #ffffe7;
   text-align: end;
   cursor: pointer;
+  border: none;
 }
+
 
 .reviews {
   /* max-height: 400px; */
@@ -289,24 +291,37 @@ body {
   color: #37295a;
 }
 
-/* Styling untuk dropdown */
-.dropdown-menu {
-  display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  z-index: 1000;
-  background-color: white;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 10px;
-  list-style: none;
-}
-
-.dropdown.open .dropdown-menu {
-  display: block;
-}
-
 .dropdown {
   position: relative;
+  align-items: end;
+  width: 100%;
+}
+
+.dropdown-menu.show {
+  right: 0;
+}
+
+.desc{
+ display: flex;
+  align-items: center;
+  gap: 6px; /* jarak antara teks dan tombol */
+  flex-wrap: wrap; /* biar responsive */
+}
+
+.loadMore{
+  border: none;
+  background-color: none;
+  background: none;
+  color: #ffffe7;
+  font-weight: bold;
+}
+
+#book-detail {
+    position: relative;
+    z-index: 1050;
+}
+
+#username.login-hover:hover {
+    text-decoration: underline;
+    cursor: pointer;
 }

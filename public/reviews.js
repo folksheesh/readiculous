@@ -70,6 +70,13 @@ document.addEventListener('DOMContentLoaded', () => {
         reviewForm.addEventListener('submit', async function (e) {
             e.preventDefault();
 
+            if (currentUsername === "Guest") {
+                // Tampilkan modal login jika belum login
+                const modal = new bootstrap.Modal(document.getElementById('loginModal'));
+                modal.show();
+                return;
+            }
+
             const text = reviewText.value.trim();
             if (!text) return;
 

@@ -302,6 +302,7 @@ if (bookmarkBtnNav) {
 }
 
 // Updated loadBookmarkedBooks function dengan struktur database baru
+// Updated loadBookmarkedBooks function dengan layout yang lebih konsisten
 async function loadBookmarkedBooks() {
     const user = auth.currentUser;
     const bookmarkList = document.getElementById('bookmark-list');
@@ -310,7 +311,13 @@ async function loadBookmarkedBooks() {
     bookmarkList.innerHTML = '';
 
     if (!user) {
-        bookmarkList.innerHTML = `<p class="text-white">Please log in to view your bookmarks.</p>`;
+        bookmarkList.innerHTML = `
+            <div class="col-12">
+                <div class="text-center p-5">
+                    <p class="text-muted fs-5">Please log in to view your bookmarks.</p>
+                    <a href="login.html" class="btn btn-primary">Login Now</a>
+                </div>
+            </div>`;
         return;
     }
 
@@ -321,7 +328,14 @@ async function loadBookmarkedBooks() {
         const bookmarkSnap = await getDocs(q);
 
         if (bookmarkSnap.empty) {
-            bookmarkList.innerHTML = `<p class="text-white">You haven't bookmarked any books yet.</p>`;
+            bookmarkList.innerHTML = `
+                <div class="col-12">
+                    <div class="text-center p-5">
+                        <i class="bi bi-bookmark-heart display-1 text-muted mb-3"></i>
+                        <p class="text-muted fs-5">You haven't bookmarked any books yet.</p>
+                        <p class="text-muted">Start exploring books and bookmark your favorites!</p>
+                    </div>
+                </div>`;
             return;
         }
 
@@ -329,26 +343,31 @@ async function loadBookmarkedBooks() {
             const book = docSnap.data();
             const docId = docSnap.id;
 
+            // Gunakan grid Bootstrap yang konsisten
             const col = document.createElement('div');
-            col.className = 'col-md-3 mb-3';
+            col.className = 'col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4';
             col.innerHTML = `
-                <div class="card h-100">
-                    <img src="${book.image || 'https://via.placeholder.com/120x180?text=No+Image'}" 
-                         class="card-img-top" alt="${book.title}" 
-                         style="height: 200px; object-fit: cover;">
-                    <div class="card-body d-flex flex-column justify-content-between">
-                        <div>
-                            <h5 class="card-title">${book.title}</h5>
-                            <p class="card-text text-muted">${book.author}</p>
-                        </div>
-                        <div class="d-flex justify-content-between mt-3">
-                            <button class="btn btn-sm btn-outline-primary view-detail-btn" 
+                <div class="card h-100 shadow-sm">
+                    <img src="${book.image || 'https://via.placeholder.com/180x250/37295a/ffffff?text=No+Image'}" 
+                         class="card-img-top" 
+                         alt="${book.title}"
+                         loading="lazy">
+                    <div class="card-body">
+                        <h5 class="card-title">${book.title}</h5>
+                        <p class="card-text text-muted">by ${book.author}</p>
+                        <div class="d-flex gap-2 mt-auto">
+                            <button class="btn btn-outline-primary flex-fill view-detail-btn" 
                                     data-book-id="${book.bookId}" 
                                     data-title="${book.title}" 
                                     data-author="${book.author}" 
-                                    data-image="${book.image}">View Details</button>
-                            <button class="btn btn-sm btn-outline-danger delete-bookmark-btn" 
-                                    data-doc-id="${docId}">Remove</button>
+                                    data-image="${book.image}">
+                                <i class="bi bi-eye me-1"></i>View
+                            </button>
+                            <button class="btn btn-outline-danger delete-bookmark-btn" 
+                                    data-doc-id="${docId}"
+                                    title="Remove from bookmarks">
+                                <i class="bi bi-trash"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -369,22 +388,42 @@ async function loadBookmarkedBooks() {
             });
         });
 
-        // Event untuk tombol "Remove"
+        // Event untuk tombol "Remove" dengan konfirmasi
         document.querySelectorAll('.delete-bookmark-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const docId = btn.getAttribute('data-doc-id');
-                try {
-                    await deleteDoc(doc(db, 'bookmarks', docId));
-                    loadBookmarkedBooks(); // Refresh setelah hapus
-                } catch (error) {
-                    console.error('Error removing bookmark:', error);
-                    alert('Failed to remove bookmark. Please try again.');
+                
+                // Tambahkan konfirmasi sebelum menghapus
+                if (confirm('Are you sure you want to remove this book from your bookmarks?')) {
+                    try {
+                        // Tambahkan loading state pada tombol
+                        btn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+                        btn.disabled = true;
+                        
+                        await deleteDoc(doc(db, 'bookmarks', docId));
+                        loadBookmarkedBooks(); // Refresh setelah hapus
+                    } catch (error) {
+                        console.error('Error removing bookmark:', error);
+                        alert('Failed to remove bookmark. Please try again.');
+                        
+                        // Restore tombol jika gagal
+                        btn.innerHTML = '<i class="bi bi-trash"></i>';
+                        btn.disabled = false;
+                    }
                 }
             });
         });
 
     } catch (error) {
         console.error('Error loading bookmarks:', error);
-        bookmarkList.innerHTML = `<p class="text-white">Error loading bookmarks. Please try again.</p>`;
+        bookmarkList.innerHTML = `
+            <div class="col-12">
+                <div class="text-center p-5">
+                    <i class="bi bi-exclamation-triangle display-1 text-warning mb-3"></i>
+                    <p class="text-muted fs-5">Error loading bookmarks.</p>
+                    <button class="btn btn-primary" onclick="loadBookmarkedBooks()">Try Again</button>
+                </div>
+            </div>`;
     }
 }
+

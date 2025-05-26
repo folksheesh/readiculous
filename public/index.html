@@ -2,171 +2,204 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Readiculous</title>
-    <link rel="stylesheet" href="css/style.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Open+Sans&display=swap"
-        rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Readiculous</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Open+Sans&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
 
-    <!-- FireBase -->
-    <script type="module" src="config.js"></script>
+  <!-- Firebase -->
+  <script type="module" src="config.js"></script>
 </head>
 
 <body>
+  <div class="main-wrapper d-flex" id="main-wrapper">
 
-    <div class="main-wrapper d-flex" id="main-wrapper">
-        <!-- LEFT CONTENT -->
-        <div class="left-content w-100">
+    <!-- LEFT CONTENT -->
+    <div class="left-content w-100">
+      <!-- Username Dropdown -->
+      <div class="dropdown">
+        <button id="username" class="username dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+        <ul class="dropdown-menu dropdown-menu-end me-5">
+          <li><a class="dropdown-item" href="#" id="logoutBtn">Logout</a></li>
+        </ul>
+      </div>
 
-            <div class="dropdown">
-                <button id="username" class="username dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                    aria-expanded="false">
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end me-5">
-                    <li><a class="dropdown-item" href="#" id="logoutBtn">Logout</a></li>
-                </ul>
+      <!-- Highlight Section -->
+      <section class="highlight">
+        <div class="container-fluid">
+          <div class="row vh-60">
+            <div class="col-md-6 d-flex align-items-center justify-content-center highlight-text">
+              <h1 class="display-3 fw-bold">12 New <br>Books to<br> Watch For</h1>
             </div>
-
-
-            <section class="highlight">
-                <div class="container-fluid">
-                    <div class="row vh-60">
-                        <!-- Left Side Text -->
-                        <div class="col-md-6 d-flex align-items-center justify-content-center highlight-text">
-                            <h1 class="display-3 fw-bold">12 New <br>Books to<br> Watch For</h1>
-                        </div>
-                        <!-- Right Side Vertical Menu -->
-                        <div class="col-md-6 d-flex align-items-center justify-content-end">
-                            <div class="menu d-flex flex-column align-items-end me-5">
-                                <a id="genreBtn" class="nav-link active">GENRES</a>
-                                <a id="discoverBtn" class="nav-link">DISCOVER</a>
-                                <a id="discoverBtn" class="nav-link">BOOKMARK</a>
-                                <a id="aboutBtn" class="nav-link">ABOUT US</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="discover" id="discover">
-                <div class="container">
-                    <input type="text" id="searchInput" class="form-control mb-4"
-                        placeholder="Search by title or author...">
-                    <div id="searchResults" class="row g-4">
-                        <!-- Search results -->
-                    </div>
-                </div>
-            </section>
-
-            <section class="genre" id="genre">
-                <div class="container">
-                    <h3 class="mb-4">BOOK CATEGORIES</h3>
-                    <!-- Fantasy -->
-                    <h5>Fantasy</h5>
-                    <div id="fantasy" class="row"></div>
-
-                    <!-- Horror -->
-                    <h5>Horror</h5>
-                    <div id="horror" class="row"></div>
-
-                    <!-- Romance -->
-                    <h5>Romance</h5>
-                    <div id="romance" class="row"></div>
-                </div>
-            </section>
-
-            <section class="about" id="about">
-                <div class="container py-5">
-                    <div class="row justify-content-center text-center">
-                        <div class="col-lg-8">
-                            <h2 class="mb-4 fw-bold">About Us</h2>
-                            <p class="text-muted fs-5">
-                                Welcome to <span class="fw-semibold text-purple">Readiculous</span>, your gateway to
-                                discovering and exploring books from around the world.
-                                We believe in making literature more accessible, engaging, and beautiful—right at your
-                                fingertips.
-                            </p>
-                            <p class="text-muted">
-                                Whether you're a casual reader, a passionate collector, or someone looking for your next
-                                favorite title,
-                                our app helps you search, preview, and fall in love with books like never before. Built
-                                with
-                                using OpenLibrary and modern web technologies.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-        <!-- Modal -->
-        <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="loginModalLabel">Login Required</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p>You need to log in first before submitting a comment. Please log in to continue.</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <a href="login.html" type="button" class="btn btn-primary" >Log in</a>
-                    </div>
-                </div>
+            <div class="col-md-6 d-flex align-items-center justify-content-end">
+              <div class="menu d-flex flex-column align-items-end me-5">
+                <a id="genreBtn" class="nav-link active">GENRES</a>
+                <a id="discoverBtn" class="nav-link">DISCOVER</a>
+                <a id="bookmarkBtnNav" class="nav-link">BOOKMARK</a>
+                <a id="aboutBtn" class="nav-link">ABOUT US</a>
+              </div>
             </div>
+          </div>
         </div>
+      </section>
 
-        <!-- RIGHT CONTENT: Book Detail -->
-        <div class="book-detail p-5 text-white" id="book-detail">
-            <img id="detail-img" src="" class="img-fluid mx-auto d-block mb-5" style="max-height: 300px;" />
-            <div class="row my-5">
-                <div class="col-5">
-                    <p id="book-id"></p>
-                    <h5 id="detail-author"></h5>
-                    <h2 id="detail-title"></h2>
-                    <button class="btn btn-outline-light">Read review</button>
-                    <!-- Add this inside the book-detail section below the description -->
-                </div>
-                <div class="desc col-7">
-                    <p id="detail-description">Click a book to see more info.
-                    </p>
-                    <button id="loadMoreBtn" class="loadMore p-0" style="display: none;">Load More</button>
-                </div>
-                <div class="reviews mt-5">
-                    <div class="header-container d-flex justify-content-between align-items-center mb-3">
-                        <h2 class="left">Reviews</h2>
-                        <a href="#" class="add-review btn btn-primary" id="toggleForm">Add Review +</a>
-                    </div>
-                    <div id="reviewFormContainer" class="mb-4" style="display: none;">
-                        <form id="reviewForm">
-                            <div class="mb-2">
-                                <input type="hidden" id="book-id-hidden">
-                                <textarea class="form-control" id="reviewText" rows="3" placeholder="Your Review"
-                                    required></textarea>
-                            </div>
-                            <button id="submitReviewBtn" type="submit" class="btn btn-success">Submit Review</button>
-                        </form>
-                    </div>
-                </div>
-                <div class="reviews ">
-                    <p id="no-review-msg" class="text-white" style="display: none;">Belum ada review untuk buku ini.</p>
-                    <div id="review-list"></div>
-                </div>
-            </div>
+      <!-- Discover Section -->
+      <section class="discover" id="discover">
+        <div class="container">
+          <input type="text" id="searchInput" class="form-control mb-4" placeholder="Search by title or author...">
+          <div id="searchResults" class="row g-4"></div>
         </div>
+      </section>
+
+      <!-- Genre Section -->
+      <section class="genre" id="genre">
+        <div class="container">
+          <h3 class="mb-4">BOOK CATEGORIES</h3>
+          <h5>Fantasy</h5>
+          <div id="fantasy" class="row"></div>
+          <h5>Horror</h5>
+          <div id="horror" class="row"></div>
+          <h5>Romance</h5>
+          <div id="romance" class="row"></div>
+        </div>
+      </section>
+
+      <!-- Bookmark Section -->
+      <section class="bookmark" id="bookmark" style="display: none;">
+        <div class="container">
+          <h3 class="mb-4">Your Bookmarked Books</h3>
+          <div id="bookmark-list" class="row"></div>
+        </div>
+      </section>
+
+      <!-- About Section -->
+      <section class="about" id="about">
+        <div class="container py-5">
+          <div class="row justify-content-center text-center">
+            <div class="col-lg-8">
+              <h2 class="mb-4 fw-bold">About Us</h2>
+              <p class="text-muted fs-5">
+                Welcome to <span class="fw-semibold text-purple">Readiculous</span>, your gateway to discovering and exploring books from around the world.
+              </p>
+              <p class="text-muted">
+                Whether you're a casual reader, a passionate collector, or someone looking for your next favorite title, our app helps you search, preview, and fall in love with books like never before.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Admin Panel -->
+      <section id="admin-panel" class="container mt-5" style="display: none;">
+        <h3 class="text-danger">Admin Dashboard</h3>
+        <p>Welcome, Admin! You have access to manage content here.</p>
+      </section>
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="module" src="search.js"></script>
-    <script type="module" src="reviews.js"></script>
-    <script type="module" src="script.js"></script>
+    <!-- RIGHT CONTENT: Book Detail -->
+    <div class="book-detail p-5 text-white" id="book-detail">
+      <img id="detail-img" src="" class="img-fluid mx-auto d-block mb-5" style="max-height: 300px;" />
+      <div class="row my-5">
+        <div class="col-5">
+          <p id="book-id"></p>
+          <h5 id="detail-author"></h5>
+          <h2 id="detail-title"></h2>
+          <button class="btn btn-outline-light">Read review</button>
 
+          <!-- Tombol Bookmark -->
+          <button id="bookmarkBtn" class="btn btn-outline-warning mt-2" style="display: none;">☆ Bookmark</button>
+        </div>
+        <div class="desc col-7">
+          <p id="detail-description">Click a book to see more info.</p>
+          <button id="loadMoreBtn" class="loadMore p-0" style="display: none;">Load More</button>
+        </div>
+        <div class="reviews mt-5">
+          <div class="header-container d-flex justify-content-between align-items-center mb-3">
+            <h2 class="left">Reviews</h2>
+            <a href="#" class="add-review btn btn-primary" id="toggleForm">Add Review +</a>
+          </div>
+          <div id="reviewFormContainer" class="mb-4" style="display: none;">
+            <form id="reviewForm">
+              <div class="mb-2">
+                <input type="hidden" id="book-id-hidden">
+                <textarea class="form-control" id="reviewText" rows="3" placeholder="Your Review" required></textarea>
+              </div>
+              <button id="submitReviewBtn" type="submit" class="btn btn-success">Submit Review</button>
+            </form>
+          </div>
+        </div>
+        <div class="reviews">
+          <p id="no-review-msg" class="text-white" style="display: none;">Belum ada review untuk buku ini.</p>
+          <div id="review-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="loginModalLabel">Login Required</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>You need to log in first before submitting a comment. Please log in to continue.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <a href="login.html" type="button" class="btn btn-primary">Log in</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Firebase scripts -->
+  <script type="module" src="search.js"></script>
+  <script type="module" src="reviews.js"></script>
+  <script type="module" src="script.js"></script>
+
+  <!-- Admin Role Logic -->
+  <script type="module">
+    import { auth, db } from './config.js';
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+    const usernameBtn = document.getElementById('username');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const adminDocRef = doc(db, 'ADMIN', user.uid);
+        const adminSnap = await getDoc(adminDocRef);
+        const isAdmin = adminSnap.exists();
+
+        usernameBtn.textContent = isAdmin ? "Admin" : user.email;
+
+        if (isAdmin) {
+          document.body.classList.add('admin-mode');
+          document.getElementById('admin-panel').style.display = 'block';
+        } else {
+          document.body.classList.remove('admin-mode');
+        }
+      } else {
+        window.location.href = 'login.html';
+      }
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      await signOut(auth);
+      window.location.href = 'login.html';
+    });
+  </script>
 </body>
 
 </html>

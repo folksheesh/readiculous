@@ -1,17 +1,17 @@
 // Import Firebase and required methods
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-import { renderReviews } from './reviews.js'; // Assuming renderReviews is in reviews.js
-
-// Import the Firebase configuration from config.js
+import { getFirestore, doc, setDoc, deleteDoc, getDoc, collection, getDocs, addDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import { renderReviews } from './reviews.js';
 import { firebaseConfig } from './config.js';
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
-let currentBookKey = null; // Global variable to store current book key
-let currentUser = null; // Store current user state
+let currentBookKey = null;
+let currentUser = null;
 
 window.addEventListener("DOMContentLoaded", function () {
     const usernameElement = document.getElementById('username');
@@ -25,14 +25,12 @@ window.addEventListener("DOMContentLoaded", function () {
     const genreSection = document.getElementById("genre");
     const aboutSection = document.getElementById("about");
 
-    // Default section display
     discoverSection.style.display = "none";
     aboutSection.style.display = "none";
     genreSection.style.display = "block";
 
-    // Firebase Auth state listener
     onAuthStateChanged(auth, (user) => {
-        currentUser = user; // Update current user state
+        currentUser = user;
         if (!usernameElement) return;
 
         if (user) {
@@ -40,28 +38,23 @@ window.addEventListener("DOMContentLoaded", function () {
             usernameElement.textContent = `Hi, ${username}`;
             usernameElement.style.cursor = "pointer";
 
-            // Tambahkan kelas dropdown
             usernameElement.classList.add('dropdown-toggle');
             usernameElement.setAttribute('data-bs-toggle', 'dropdown');
             usernameElement.setAttribute('aria-expanded', 'false');
 
-            // Pastikan container dropdown tersedia
             const dropdownMenu = document.getElementById('userDropdown');
             if (dropdownMenu) dropdownMenu.style.display = 'block';
 
-            usernameElement.onclick = null; // biar default Bootstrap behavior
+            usernameElement.onclick = null;
         } else {
             usernameElement.textContent = "Login / Register";
             usernameElement.style.cursor = "pointer";
 
-            // Hapus kelas dropdown
             usernameElement.classList.remove('dropdown-toggle');
             usernameElement.removeAttribute('data-bs-toggle');
             usernameElement.removeAttribute('aria-expanded');
-            usernameElement.classList.add('login-hover'); // tambahkan class hover
+            usernameElement.classList.add('login-hover');
 
-
-            // Sembunyikan dropdown jika ada
             const dropdownMenu = document.getElementById('userDropdown');
             if (dropdownMenu) dropdownMenu.style.display = 'none';
 
@@ -71,21 +64,16 @@ window.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-
-    // Logout functionality
     logoutBtn.addEventListener("click", function (e) {
-        e.preventDefault(); // prevent link behavior
-
-        // Use signOut from modular Firebase SDK
+        e.preventDefault();
         signOut(auth).then(() => {
             console.log("User signed out.");
-            window.location.href = "index.html"; // redirect to login or home page
+            window.location.href = "index.html";
         }).catch((error) => {
             console.error("Logout error:", error);
         });
     });
 
-    // Menu active toggle
     document.querySelectorAll('.menu .nav-link').forEach(link => {
         link.addEventListener('click', function (e) {
             e.preventDefault();
@@ -94,7 +82,6 @@ window.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // Navigation buttons
     discoverBtn.addEventListener("click", function (e) {
         e.preventDefault();
         discoverSection.style.display = "block";
@@ -116,7 +103,6 @@ window.addEventListener("DOMContentLoaded", function () {
         genreSection.style.display = "none";
     });
 
-    // Load categories
     const categories = ['fantasy', 'horror', 'romance'];
     categories.forEach(category => {
         fetch(`https://openlibrary.org/subjects/${category}.json?limit=6`)
@@ -137,7 +123,7 @@ window.addEventListener("DOMContentLoaded", function () {
                     const bookElement = document.createElement('div');
                     bookElement.classList.add('text-center', 'book');
                     bookElement.style.cursor = 'pointer';
-                    bookElement.innerHTML = ` 
+                    bookElement.innerHTML = `
                         <img src="${coverUrl}" class="rounded shadow-sm mb-2" style="width: 140px; height: 220px; object-fit: cover;">
                         <p class="small text-muted">${author}</p>
                         <p class="small fw-semibold mb-0">${title}</p>
@@ -154,7 +140,6 @@ window.addEventListener("DOMContentLoaded", function () {
             .catch(error => console.error('Error fetching books:', error));
     });
 
-    // Close detail when clicking outside the book details
     document.addEventListener('click', function (e) {
         const detailPanel = document.getElementById('book-detail');
         const mainWrapper = document.getElementById('main-wrapper');
@@ -167,21 +152,17 @@ window.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // Render reviews if function exists
     if (typeof renderReviews === 'function') {
         renderReviews();
     }
 });
 
-// Show book detail function
-function showDetail(image, title, author, key) {
+// Show book detail + bookmark dengan struktur database baru
+async function showDetail(image, title, author, key) {
     currentBookKey = key;
     const reviewForm = document.getElementById('reviewForm');
-    if (reviewForm) {
-        reviewForm.setAttribute('book-id', key);
-    }
+    if (reviewForm) reviewForm.setAttribute('book-id', key);
 
-    // Update detail UI
     document.getElementById('detail-img').src = image;
     document.getElementById('detail-title').textContent = title;
     document.getElementById('detail-author').textContent = author;
@@ -190,10 +171,8 @@ function showDetail(image, title, author, key) {
     document.getElementById('main-wrapper').classList.add('split');
     document.getElementById('book-detail').classList.add('active');
 
-    // Render reviews based on book key
     renderReviews(key);
 
-    // Fetch description from OpenLibrary
     fetch(`https://openlibrary.org${key}.json`)
         .then(res => res.json())
         .then(data => {
@@ -206,9 +185,62 @@ function showDetail(image, title, author, key) {
             console.error('Failed to load description:', err);
             document.getElementById('detail-description').textContent = 'No description available.';
         });
+
+    const bookmarkBtn = document.getElementById("bookmarkBtn");
+    if (bookmarkBtn) {
+        if (!currentUser) {
+            bookmarkBtn.style.display = "none";
+            return;
+        }
+
+        // Cek apakah buku sudah di-bookmark dengan struktur baru
+        const bookmarkRef = collection(db, "bookmarks");
+        const q = query(bookmarkRef, 
+            where("userId", "==", currentUser.uid), 
+            where("bookId", "==", key.replace('/works/', ''))
+        );
+        const querySnapshot = await getDocs(q);
+        
+        let isBookmarked = !querySnapshot.empty;
+        let bookmarkDocId = null;
+        
+        if (isBookmarked) {
+            bookmarkDocId = querySnapshot.docs[0].id;
+        }
+
+        bookmarkBtn.textContent = isBookmarked ? "★ Bookmarked" : "☆ Bookmark";
+        bookmarkBtn.style.display = "inline-block";
+
+        bookmarkBtn.onclick = async () => {
+            if (!currentUser) return alert("Please log in to bookmark.");
+
+            if (isBookmarked && bookmarkDocId) {
+                // Hapus bookmark
+                await deleteDoc(doc(db, "bookmarks", bookmarkDocId));
+                bookmarkBtn.textContent = "☆ Bookmark";
+                isBookmarked = false;
+                bookmarkDocId = null;
+            } else {
+                // Tambah bookmark dengan struktur baru
+                const bookmarkData = {
+                    userId: currentUser.uid,
+                    bookId: key.replace('/works/', ''), // Hilangkan prefix '/works/'
+                    createdAt: serverTimestamp(),
+                    // Data tambahan untuk kemudahan akses
+                    title: title,
+                    author: author,
+                    image: image
+                };
+                
+                const docRef = await addDoc(collection(db, "bookmarks"), bookmarkData);
+                bookmarkBtn.textContent = "★ Bookmarked";
+                isBookmarked = true;
+                bookmarkDocId = docRef.id;
+            }
+        };
+    }
 }
 
-// Update description in UI
 function updateDescription(description) {
     const descElement = document.getElementById('detail-description');
     const loadMoreBtn = document.getElementById('loadMoreBtn');
@@ -220,12 +252,10 @@ function updateDescription(description) {
         ? description.slice(0, maxLength) + "..."
         : description;
 
-    // Initial state
     descElement.textContent = shortDesc;
     loadMoreBtn.style.display = description.length > maxLength ? 'inline' : 'none';
     loadMoreBtn.textContent = "Load More";
 
-    // Button click handler
     loadMoreBtn.onclick = () => {
         isExpanded = !isExpanded;
         if (isExpanded) {
@@ -239,10 +269,122 @@ function updateDescription(description) {
 }
 
 const loginRedirectBtn = document.getElementById("loginRedirectBtn");
-
 if (loginRedirectBtn) {
     loginRedirectBtn.addEventListener("click", function (e) {
         e.preventDefault();
-        window.location.href = "login.html"; // redirect to your login page
+        window.location.href = "login.html";
     });
+}
+
+// Updated bookmark navigation dengan struktur database baru
+const bookmarkBtnNav = document.getElementById('bookmarkBtnNav');
+if (bookmarkBtnNav) {
+    const bookmarkSection = document.getElementById('bookmark');
+    const genreSection = document.getElementById('genre');
+    const discoverSection = document.getElementById('discover');
+    const aboutSection = document.getElementById('about');
+    const bookDetailSection = document.getElementById('book-detail');
+
+    bookmarkBtnNav.addEventListener('click', () => {
+        // Sembunyikan semua section lain
+        genreSection.style.display = 'none';
+        discoverSection.style.display = 'none';
+        aboutSection.style.display = 'none';
+        if (bookDetailSection) bookDetailSection.style.display = 'none';
+
+        // Tampilkan bookmark section
+        if (bookmarkSection) {
+            bookmarkSection.style.display = 'block';
+            // Muat data bookmark
+            loadBookmarkedBooks();
+        }
+    });
+}
+
+// Updated loadBookmarkedBooks function dengan struktur database baru
+async function loadBookmarkedBooks() {
+    const user = auth.currentUser;
+    const bookmarkList = document.getElementById('bookmark-list');
+    
+    if (!bookmarkList) return;
+    bookmarkList.innerHTML = '';
+
+    if (!user) {
+        bookmarkList.innerHTML = `<p class="text-white">Please log in to view your bookmarks.</p>`;
+        return;
+    }
+
+    try {
+        // Query bookmarks dengan struktur baru
+        const bookmarkRef = collection(db, 'bookmarks');
+        const q = query(bookmarkRef, where("userId", "==", user.uid));
+        const bookmarkSnap = await getDocs(q);
+
+        if (bookmarkSnap.empty) {
+            bookmarkList.innerHTML = `<p class="text-white">You haven't bookmarked any books yet.</p>`;
+            return;
+        }
+
+        bookmarkSnap.forEach((docSnap) => {
+            const book = docSnap.data();
+            const docId = docSnap.id;
+
+            const col = document.createElement('div');
+            col.className = 'col-md-3 mb-3';
+            col.innerHTML = `
+                <div class="card h-100">
+                    <img src="${book.image || 'https://via.placeholder.com/120x180?text=No+Image'}" 
+                         class="card-img-top" alt="${book.title}" 
+                         style="height: 200px; object-fit: cover;">
+                    <div class="card-body d-flex flex-column justify-content-between">
+                        <div>
+                            <h5 class="card-title">${book.title}</h5>
+                            <p class="card-text text-muted">${book.author}</p>
+                        </div>
+                        <div class="d-flex justify-content-between mt-3">
+                            <button class="btn btn-sm btn-outline-primary view-detail-btn" 
+                                    data-book-id="${book.bookId}" 
+                                    data-title="${book.title}" 
+                                    data-author="${book.author}" 
+                                    data-image="${book.image}">View Details</button>
+                            <button class="btn btn-sm btn-outline-danger delete-bookmark-btn" 
+                                    data-doc-id="${docId}">Remove</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            bookmarkList.appendChild(col);
+        });
+
+        // Event untuk tombol "View Details"
+        document.querySelectorAll('.view-detail-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const bookId = btn.getAttribute('data-book-id');
+                const title = btn.getAttribute('data-title');
+                const author = btn.getAttribute('data-author');
+                const image = btn.getAttribute('data-image');
+                
+                // Panggil showDetail dengan data bookmark
+                showDetail(image, title, author, `/works/${bookId}`);
+            });
+        });
+
+        // Event untuk tombol "Remove"
+        document.querySelectorAll('.delete-bookmark-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const docId = btn.getAttribute('data-doc-id');
+                try {
+                    await deleteDoc(doc(db, 'bookmarks', docId));
+                    loadBookmarkedBooks(); // Refresh setelah hapus
+                } catch (error) {
+                    console.error('Error removing bookmark:', error);
+                    alert('Failed to remove bookmark. Please try again.');
+                }
+            });
+        });
+
+    } catch (error) {
+        console.error('Error loading bookmarks:', error);
+        bookmarkList.innerHTML = `<p class="text-white">Error loading bookmarks. Please try again.</p>`;
+    }
 }

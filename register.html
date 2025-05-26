@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register - Readiculous</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="css/register.css" rel="stylesheet"/>
+</head>
+<body>
+  <div class="containers">
+    <div class="register-container">
+      <a href="Forget password.html">
+        <img src="img/logo-removebg-preview.png " alt="Readiculous" class="logo"/>
+      </a>
+      <h3 class="text-center">Create account</h3>
+      <form id="registerForm">
+        <div class="mb-3">
+          <input type="text" class="form-control" id="name" placeholder="Enter your Username" required />
+        </div>
+        <div class="mb-3">
+          <input type="email" class="form-control" id="email" placeholder="Enter your email" required />
+        </div>
+        <div class="mb-3">
+          <input type="password" class="form-control" id="password" placeholder="Enter your Password" required />
+        </div>
+        <button type="submit" class="btn btn-register w-100" id="submitButton">Create your Account</button>
+        <div id="loading" class="d-none text-center mt-3">
+          <span>Loading...</span>
+        </div>
+      </form>
+      <p class="text-center mt-3">
+        Already have an account? <a href="login.html">Sign in</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Firebase Module with Analytics (versi lengkap) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+    import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+  apiKey: "AIzaSyAHH9sA6Aw02jFEj67RcL6ekFg7rdh_n_c",
+  authDomain: "readiculous-9e59d.firebaseapp.com",
+  projectId: "readiculous-9e59d",
+  storageBucket: "readiculous-9e59d.firebasestorage.app",
+  messagingSenderId: "137985364885",
+  appId: "1:137985364885:web:e7175c5cc162dacd501c9c",
+  measurementId: "G-7LYGQNZZFM"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      if (!email.includes('@')) {
+        alert('Please enter a valid email.');
+        return;
+      }
+      if (password.length < 6) {
+        alert('Password must be at least 6 characters.');
+        return;
+      }
+
+      document.getElementById('submitButton').disabled = true;
+      document.getElementById('loading').classList.remove('d-none');
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCredential.user, { displayName: name });
+
+        await setDoc(doc(db, "users", userCredential.user.uid), {
+          username: name,
+          email: email,
+          id: userCredential.user.uid,
+          createdAt: new Date().toISOString(),
+        });
+
+        alert('Akun berhasil dibuat!');
+        window.location.href = 'login.html';
+      } catch (error) {
+        alert(error.message);
+      } finally {
+        document.getElementById('loading').classList.add('d-none');
+        document.getElementById('submitButton').disabled = false;
+      }
+    });
+  </script>
+
+  <!-- Tetap mempertahankan script ini jika kamu punya isi di js/firebase-config.js -->
+  <script src="js/firebase-config.js"></script>
+
+</body>
+</html>

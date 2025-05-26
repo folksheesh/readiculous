@@ -1,0 +1,52 @@
+body {
+  background-color: #37295a;
+  font-family: Arial, sans-serif;
+}
+
+.containers {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.register-container {
+  background-color: #fff;
+  padding: 40px 30px;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+}
+
+.logo {
+  width: 150px;
+  display: block;
+  margin: 0 auto 20px;
+}
+
+.btn-register {
+  background-color: #f7523e;
+  color: #000;
+  font-weight: bold;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.btn-register:hover {
+  background-color: #e4b400;
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}c
+
+.text-login {
+  color: #f5c518;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.text-login:hover {
+  text-decoration: underline;
+}

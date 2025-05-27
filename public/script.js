@@ -1,3 +1,5 @@
+//script.js
+
 // Import Firebase and required methods
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
@@ -12,6 +14,323 @@ const db = getFirestore(app);
 
 let currentBookKey = null;
 let currentUser = null;
+let booksData = {
+    fantasy: [],
+    horror: [],
+    romance: []
+};
+
+// ========== BOOKMARK FUNCTIONS ==========
+
+// Function untuk menambah bookmark (hanya simpan ID untuk konsistensi dengan Flutter)
+async function addBookmark(bookId, userId) {
+    const bookmarkData = {
+        userId: userId,
+        bookId: bookId.replace('/works/', ''), // Hilangkan prefix '/works/'
+        createdAt: serverTimestamp()
+        // Tidak simpan title, author, image - akan diambil dari API
+    };
+    
+    const docRef = await addDoc(collection(db, "bookmarks"), bookmarkData);
+    return docRef.id;
+}
+
+// Updated loadBookmarkedBooks function - fetch data dari API untuk konsistensi
+async function loadBookmarkedBooks() {
+    const user = auth.currentUser;
+    const bookmarkList = document.getElementById('bookmark-list');
+    
+    if (!bookmarkList) return;
+    bookmarkList.innerHTML = '<p class="text-white">Loading bookmarks...</p>';
+
+    if (!user) {
+        bookmarkList.innerHTML = `<p class="text-white">Please log in to view your bookmarks.</p>`;
+        return;
+    }
+
+    try {
+        // Query bookmarks - hanya ambil ID
+        const bookmarkRef = collection(db, 'bookmarks');
+        const q = query(bookmarkRef, where("userId", "==", user.uid));
+        const bookmarkSnap = await getDocs(q);
+
+        if (bookmarkSnap.empty) {
+            bookmarkList.innerHTML = `<p class="text-white">You haven't bookmarked any books yet.</p>`;
+            return;
+        }
+
+        bookmarkList.innerHTML = ''; // Clear loading message
+
+        // Process each bookmark
+        for (const docSnap of bookmarkSnap.docs) {
+            const bookmarkData = docSnap.data();
+            const docId = docSnap.id;
+            const bookId = bookmarkData.bookId;
+
+            // Create placeholder card first
+            const col = document.createElement('div');
+            col.className = 'col-md-3 mb-3';
+            col.innerHTML = `
+                <div class="card h-100">
+                    <div class="card-img-top d-flex justify-content-center align-items-center" 
+                         style="height: 200px; background-color: #f8f9fa;">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column justify-content-between">
+                        <div>
+                            <h5 class="card-title">Loading...</h5>
+                            <p class="card-text text-muted">Loading...</p>
+                        </div>
+                        <div class="d-flex justify-content-between mt-3">
+                            <button class="btn btn-sm btn-outline-primary" disabled>Loading...</button>
+                            <button class="btn btn-sm btn-outline-danger delete-bookmark-btn" 
+                                    data-doc-id="${docId}">Remove</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            bookmarkList.appendChild(col);
+
+            // Fetch book details from API
+            try {
+                const response = await fetch(`https://openlibrary.org/works/${bookId}.json`);
+                const bookData = await response.json();
+                
+                // Get book cover
+                let coverUrl = 'https://via.placeholder.com/120x180?text=No+Image';
+                if (bookData.covers && bookData.covers.length > 0) {
+                    coverUrl = `https://covers.openlibrary.org/b/id/${bookData.covers[0]}-M.jpg`;
+                }
+
+                // Get book title
+                const title = bookData.title || 'Unknown Title';
+
+                // Get authors
+                let author = 'Unknown Author';
+                if (bookData.authors && bookData.authors.length > 0) {
+                    // Fetch author details
+                    const authorResponse = await fetch(`https://openlibrary.org${bookData.authors[0].author.key}.json`);
+                    const authorData = await authorResponse.json();
+                    author = authorData.name || 'Unknown Author';
+                }
+
+                // Update the card with real data
+                col.innerHTML = `
+                    <div class="card h-100">
+                        <img src="${coverUrl}" 
+                             class="card-img-top" alt="${title}" 
+                             style="height: 200px; object-fit: cover;"
+                             onerror="this.src='https://via.placeholder.com/120x180?text=No+Image'">
+                        <div class="card-body d-flex flex-column justify-content-between">
+                            <div>
+                                <h5 class="card-title">${title}</h5>
+                                <p class="card-text text-muted">${author}</p>
+                            </div>
+                            <div class="d-flex justify-content-between mt-3">
+                                <button class="btn btn-sm btn-outline-primary view-detail-btn" 
+                                        data-book-id="${bookId}" 
+                                        data-title="${title}" 
+                                        data-author="${author}" 
+                                        data-image="${coverUrl}">View Details</button>
+                                <button class="btn btn-sm btn-outline-danger delete-bookmark-btn" 
+                                        data-doc-id="${docId}">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Re-attach event listeners for this specific card
+                const viewBtn = col.querySelector('.view-detail-btn');
+                const deleteBtn = col.querySelector('.delete-bookmark-btn');
+
+                if (viewBtn) {
+                    viewBtn.addEventListener('click', () => {
+                        showDetail(coverUrl, title, author, `/works/${bookId}`);
+                    });
+                }
+
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', async () => {
+                        try {
+                            await deleteDoc(doc(db, 'bookmarks', docId));
+                            loadBookmarkedBooks(); // Refresh setelah hapus
+                        } catch (error) {
+                            console.error('Error removing bookmark:', error);
+                            alert('Failed to remove bookmark. Please try again.');
+                        }
+                    });
+                }
+
+            } catch (error) {
+                console.error(`Error loading book ${bookId}:`, error);
+                // Update card to show error
+                col.innerHTML = `
+                    <div class="card h-100">
+                        <div class="card-img-top d-flex justify-content-center align-items-center" 
+                             style="height: 200px; background-color: #f8f9fa;">
+                            <i class="fas fa-exclamation-triangle text-warning"></i>
+                        </div>
+                        <div class="card-body d-flex flex-column justify-content-between">
+                            <div>
+                                <h5 class="card-title text-muted">Failed to load</h5>
+                                <p class="card-text text-muted">Book data unavailable</p>
+                            </div>
+                            <div class="d-flex justify-content-between mt-3">
+                                <button class="btn btn-sm btn-outline-secondary" disabled>Unavailable</button>
+                                <button class="btn btn-sm btn-outline-danger delete-bookmark-btn" 
+                                        data-doc-id="${docId}">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Still attach delete event
+                const deleteBtn = col.querySelector('.delete-bookmark-btn');
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', async () => {
+                        try {
+                            await deleteDoc(doc(db, 'bookmarks', docId));
+                            loadBookmarkedBooks();
+                        } catch (error) {
+                            console.error('Error removing bookmark:', error);
+                            alert('Failed to remove bookmark. Please try again.');
+                        }
+                    });
+                }
+            }
+        }
+
+    } catch (error) {
+        console.error('Error loading bookmarks:', error);
+        bookmarkList.innerHTML = `<p class="text-white">Error loading bookmarks. Please try again.</p>`;
+    }
+}
+
+// ========== BOOK RENDERING FUNCTIONS ==========
+
+// Function to create book element with event listener
+function createBookElement(book, coverUrl, title, author) {
+    const bookElement = document.createElement('div');
+    bookElement.classList.add('text-center', 'book');
+    bookElement.style.cursor = 'pointer';
+    bookElement.innerHTML = `
+        <img src="${coverUrl}" class="rounded shadow-sm mb-2" style="width: 140px; height: 220px; object-fit: cover;">
+        <p class="small text-muted">${author}</p>
+        <p class="small fw-semibold mb-0">${title}</p>
+    `;
+
+    bookElement.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showDetail(coverUrl, title, author, book.key);
+    });
+
+    return bookElement;
+}
+
+// Function to load books for a specific category
+async function loadCategoryBooks(category) {
+    const container = document.getElementById(category);
+    if (!container) return;
+
+    // If books already loaded, just re-attach event listeners
+    if (booksData[category].length > 0) {
+        container.innerHTML = '';
+        booksData[category].forEach(bookData => {
+            const bookElement = createBookElement(
+                bookData.book, 
+                bookData.coverUrl, 
+                bookData.title, 
+                bookData.author
+            );
+            container.appendChild(bookElement);
+        });
+        return;
+    }
+
+    // Load books from API if not cached
+    try {
+        const response = await fetch(`https://openlibrary.org/subjects/${category}.json?limit=6`);
+        const data = await response.json();
+        
+        container.innerHTML = '';
+        
+        data.works.slice(0, 6).forEach(book => {
+            const coverUrl = book.cover_id
+                ? `https://covers.openlibrary.org/b/id/${book.cover_id}-M.jpg`
+                : 'https://via.placeholder.com/120x180?text=No+Image';
+
+            const author = book.authors && book.authors.length > 0
+                ? book.authors.map(a => a.name).join(', ')
+                : 'Unknown Author';
+
+            const title = book.title;
+
+            // Store book data for re-rendering
+            booksData[category].push({
+                book,
+                coverUrl,
+                title,
+                author
+            });
+
+            const bookElement = createBookElement(book, coverUrl, title, author);
+            container.appendChild(bookElement);
+        });
+    } catch (error) {
+        console.error(`Error fetching ${category} books:`, error);
+    }
+}
+
+// Function to re-attach event listeners for all books
+function reattachBookEventListeners() {
+    const categories = ['fantasy', 'horror', 'romance'];
+    categories.forEach(category => {
+        loadCategoryBooks(category);
+    });
+}
+
+// ========== NAVIGATION FUNCTIONS ==========
+
+// Function to show a specific section and hide others
+function showSection(targetSection) {
+    const sections = ['discover', 'genre', 'about', 'bookmark'];
+    const bookDetailSection = document.getElementById('book-detail');
+    const mainWrapper = document.getElementById('main-wrapper');
+
+    // Hide all sections
+    sections.forEach(sectionId => {
+        const section = document.getElementById(sectionId);
+        if (section) {
+            section.style.display = 'none';
+        }
+    });
+
+    // Reset layout when switching away from detail view
+    if (mainWrapper && bookDetailSection) {
+        mainWrapper.classList.remove('split');
+        bookDetailSection.classList.remove('active');
+    }
+
+    // Show target section
+    const section = document.getElementById(targetSection);
+    if (section) {
+        section.style.display = 'block';
+        
+        // Special handling for genre section - re-attach event listeners
+        if (targetSection === 'genre') {
+            reattachBookEventListeners();
+        }
+        
+        // Special handling for bookmark section
+        if (targetSection === 'bookmark') {
+            loadBookmarkedBooks();
+        }
+    }
+}
+
+// ========== MAIN APPLICATION LOGIC ==========
 
 window.addEventListener("DOMContentLoaded", function () {
     const usernameElement = document.getElementById('username');
@@ -20,15 +339,12 @@ window.addEventListener("DOMContentLoaded", function () {
     const discoverBtn = document.getElementById("discoverBtn");
     const genreBtn = document.getElementById("genreBtn");
     const aboutBtn = document.getElementById("aboutBtn");
+    const bookmarkBtnNav = document.getElementById('bookmarkBtnNav');
 
-    const discoverSection = document.getElementById("discover");
-    const genreSection = document.getElementById("genre");
-    const aboutSection = document.getElementById("about");
+    // Initial section display - show genre by default
+    showSection('genre');
 
-    discoverSection.style.display = "none";
-    aboutSection.style.display = "none";
-    genreSection.style.display = "block";
-
+    // Auth state management
     onAuthStateChanged(auth, (user) => {
         currentUser = user;
         if (!usernameElement) return;
@@ -64,16 +380,20 @@ window.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    logoutBtn.addEventListener("click", function (e) {
-        e.preventDefault();
-        signOut(auth).then(() => {
-            console.log("User signed out.");
-            window.location.href = "index.html";
-        }).catch((error) => {
-            console.error("Logout error:", error);
+    // Logout functionality
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            signOut(auth).then(() => {
+                console.log("User signed out.");
+                window.location.href = "index.html";
+            }).catch((error) => {
+                console.error("Logout error:", error);
+            });
         });
-    });
+    }
 
+    // Navigation menu handling
     document.querySelectorAll('.menu .nav-link').forEach(link => {
         link.addEventListener('click', function (e) {
             e.preventDefault();
@@ -82,97 +402,99 @@ window.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    discoverBtn.addEventListener("click", function (e) {
-        e.preventDefault();
-        discoverSection.style.display = "block";
-        genreSection.style.display = "none";
-        aboutSection.style.display = "none";
-    });
+    // Section navigation with improved handling
+    if (discoverBtn) {
+        discoverBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            showSection('discover');
+        });
+    }
 
-    genreBtn.addEventListener("click", function (e) {
-        e.preventDefault();
-        discoverSection.style.display = "none";
-        aboutSection.style.display = "none";
-        genreSection.style.display = "block";
-    });
+    if (genreBtn) {
+        genreBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            showSection('genre');
+        });
+    }
 
-    aboutBtn.addEventListener("click", function (e) {
-        e.preventDefault();
-        discoverSection.style.display = "none";
-        aboutSection.style.display = "block";
-        genreSection.style.display = "none";
-    });
+    if (aboutBtn) {
+        aboutBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            showSection('about');
+        });
+    }
 
+    // Bookmark navigation with improved handling
+    if (bookmarkBtnNav) {
+        bookmarkBtnNav.addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection('bookmark');
+        });
+    }
+
+    // Load initial book categories
     const categories = ['fantasy', 'horror', 'romance'];
     categories.forEach(category => {
-        fetch(`https://openlibrary.org/subjects/${category}.json?limit=6`)
-            .then(response => response.json())
-            .then(data => {
-                const container = document.getElementById(category);
-                data.works.slice(0, 6).forEach(book => {
-                    const coverUrl = book.cover_id
-                        ? `https://covers.openlibrary.org/b/id/${book.cover_id}-M.jpg`
-                        : 'https://via.placeholder.com/120x180?text=No+Image';
-
-                    const author = book.authors && book.authors.length > 0
-                        ? book.authors.map(a => a.name).join(', ')
-                        : 'Unknown Author';
-
-                    const title = book.title;
-
-                    const bookElement = document.createElement('div');
-                    bookElement.classList.add('text-center', 'book');
-                    bookElement.style.cursor = 'pointer';
-                    bookElement.innerHTML = `
-                        <img src="${coverUrl}" class="rounded shadow-sm mb-2" style="width: 140px; height: 220px; object-fit: cover;">
-                        <p class="small text-muted">${author}</p>
-                        <p class="small fw-semibold mb-0">${title}</p>
-                    `;
-
-                    bookElement.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        showDetail(coverUrl, title, author, book.key);
-                    });
-
-                    container.appendChild(bookElement);
-                });
-            })
-            .catch(error => console.error('Error fetching books:', error));
+        loadCategoryBooks(category);
     });
 
+    // Close detail panel when clicking outside
     document.addEventListener('click', function (e) {
         const detailPanel = document.getElementById('book-detail');
         const mainWrapper = document.getElementById('main-wrapper');
-        const isClickInsideDetail = detailPanel.contains(e.target);
+        const isClickInsideDetail = detailPanel && detailPanel.contains(e.target);
         const isClickOnBook = e.target.closest('.book');
 
-        if (!isClickInsideDetail && !isClickOnBook) {
+        if (!isClickInsideDetail && !isClickOnBook && detailPanel && mainWrapper) {
             mainWrapper.classList.remove('split');
             detailPanel.classList.remove('active');
         }
     });
 
+    // Initialize reviews if available
     if (typeof renderReviews === 'function') {
         renderReviews();
     }
+
+    // Login redirect button
+    const loginRedirectBtn = document.getElementById("loginRedirectBtn");
+    if (loginRedirectBtn) {
+        loginRedirectBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            window.location.href = "login.html";
+        });
+    }
 });
 
-// Show book detail + bookmark dengan struktur database baru
+// ========== BOOK DETAIL FUNCTIONS ==========
+
+// Show book detail dengan bookmark functionality yang konsisten
 async function showDetail(image, title, author, key) {
     currentBookKey = key;
     const reviewForm = document.getElementById('reviewForm');
     if (reviewForm) reviewForm.setAttribute('book-id', key);
 
-    document.getElementById('detail-img').src = image;
-    document.getElementById('detail-title').textContent = title;
-    document.getElementById('detail-author').textContent = author;
-    document.getElementById('detail-description').textContent = "Loading description...";
+    const detailImg = document.getElementById('detail-img');
+    const detailTitle = document.getElementById('detail-title');
+    const detailAuthor = document.getElementById('detail-author');
+    const detailDescription = document.getElementById('detail-description');
+    const mainWrapper = document.getElementById('main-wrapper');
+    const bookDetail = document.getElementById('book-detail');
 
-    document.getElementById('main-wrapper').classList.add('split');
-    document.getElementById('book-detail').classList.add('active');
+    if (detailImg) detailImg.src = image;
+    if (detailTitle) detailTitle.textContent = title;
+    if (detailAuthor) detailAuthor.textContent = author;
+    if (detailDescription) detailDescription.textContent = "Loading description...";
 
-    renderReviews(key);
+    if (mainWrapper) mainWrapper.classList.add('split');
+    if (bookDetail) bookDetail.classList.add('active');
 
+    // Render reviews
+    if (typeof renderReviews === 'function') {
+        renderReviews(key);
+    }
+
+    // Fetch book description
     fetch(`https://openlibrary.org${key}.json`)
         .then(res => res.json())
         .then(data => {
@@ -183,9 +505,10 @@ async function showDetail(image, title, author, key) {
         })
         .catch(err => {
             console.error('Failed to load description:', err);
-            document.getElementById('detail-description').textContent = 'No description available.';
+            if (detailDescription) detailDescription.textContent = 'No description available.';
         });
 
+    // Handle bookmark button dengan struktur database yang konsisten
     const bookmarkBtn = document.getElementById("bookmarkBtn");
     if (bookmarkBtn) {
         if (!currentUser) {
@@ -193,7 +516,7 @@ async function showDetail(image, title, author, key) {
             return;
         }
 
-        // Cek apakah buku sudah di-bookmark dengan struktur baru
+        // Cek apakah buku sudah di-bookmark (konsisten dengan struktur baru)
         const bookmarkRef = collection(db, "bookmarks");
         const q = query(bookmarkRef, 
             where("userId", "==", currentUser.uid), 
@@ -221,15 +544,12 @@ async function showDetail(image, title, author, key) {
                 isBookmarked = false;
                 bookmarkDocId = null;
             } else {
-                // Tambah bookmark dengan struktur baru
+                // Tambah bookmark - hanya simpan ID (konsistent dengan Flutter)
                 const bookmarkData = {
                     userId: currentUser.uid,
-                    bookId: key.replace('/works/', ''), // Hilangkan prefix '/works/'
-                    createdAt: serverTimestamp(),
-                    // Data tambahan untuk kemudahan akses
-                    title: title,
-                    author: author,
-                    image: image
+                    bookId: key.replace('/works/', ''),
+                    createdAt: serverTimestamp()
+                    // Tidak simpan title, author, image - akan diambil dari API saat load
                 };
                 
                 const docRef = await addDoc(collection(db, "bookmarks"), bookmarkData);
@@ -241,9 +561,12 @@ async function showDetail(image, title, author, key) {
     }
 }
 
+// Description expand/collapse functionality
 function updateDescription(description) {
     const descElement = document.getElementById('detail-description');
     const loadMoreBtn = document.getElementById('loadMoreBtn');
+
+    if (!descElement) return;
 
     const maxLength = 300;
     let isExpanded = false;
@@ -253,177 +576,25 @@ function updateDescription(description) {
         : description;
 
     descElement.textContent = shortDesc;
-    loadMoreBtn.style.display = description.length > maxLength ? 'inline' : 'none';
-    loadMoreBtn.textContent = "Load More";
-
-    loadMoreBtn.onclick = () => {
-        isExpanded = !isExpanded;
-        if (isExpanded) {
-            descElement.textContent = description;
-            loadMoreBtn.textContent = "Load Less";
-        } else {
-            descElement.textContent = shortDesc;
-            loadMoreBtn.textContent = "Load More";
-        }
-    };
-}
-
-const loginRedirectBtn = document.getElementById("loginRedirectBtn");
-if (loginRedirectBtn) {
-    loginRedirectBtn.addEventListener("click", function (e) {
-        e.preventDefault();
-        window.location.href = "login.html";
-    });
-}
-
-// Updated bookmark navigation dengan struktur database baru
-const bookmarkBtnNav = document.getElementById('bookmarkBtnNav');
-if (bookmarkBtnNav) {
-    const bookmarkSection = document.getElementById('bookmark');
-    const genreSection = document.getElementById('genre');
-    const discoverSection = document.getElementById('discover');
-    const aboutSection = document.getElementById('about');
-    const bookDetailSection = document.getElementById('book-detail');
-
-    bookmarkBtnNav.addEventListener('click', () => {
-        // Sembunyikan semua section lain
-        genreSection.style.display = 'none';
-        discoverSection.style.display = 'none';
-        aboutSection.style.display = 'none';
-        if (bookDetailSection) bookDetailSection.style.display = 'none';
-
-        // Tampilkan bookmark section
-        if (bookmarkSection) {
-            bookmarkSection.style.display = 'block';
-            // Muat data bookmark
-            loadBookmarkedBooks();
-        }
-    });
-}
-
-// Updated loadBookmarkedBooks function dengan struktur database baru
-// Updated loadBookmarkedBooks function dengan layout yang lebih konsisten
-async function loadBookmarkedBooks() {
-    const user = auth.currentUser;
-    const bookmarkList = document.getElementById('bookmark-list');
     
-    if (!bookmarkList) return;
-    bookmarkList.innerHTML = '';
+    if (loadMoreBtn) {
+        loadMoreBtn.style.display = description.length > maxLength ? 'inline' : 'none';
+        loadMoreBtn.textContent = "Load More";
 
-    if (!user) {
-        bookmarkList.innerHTML = `
-            <div class="col-12">
-                <div class="text-center p-5">
-                    <p class="text-muted fs-5">Please log in to view your bookmarks.</p>
-                    <a href="login.html" class="btn btn-primary">Login Now</a>
-                </div>
-            </div>`;
-        return;
-    }
-
-    try {
-        // Query bookmarks dengan struktur baru
-        const bookmarkRef = collection(db, 'bookmarks');
-        const q = query(bookmarkRef, where("userId", "==", user.uid));
-        const bookmarkSnap = await getDocs(q);
-
-        if (bookmarkSnap.empty) {
-            bookmarkList.innerHTML = `
-                <div class="col-12">
-                    <div class="text-center p-5">
-                        <i class="bi bi-bookmark-heart display-1 text-muted mb-3"></i>
-                        <p class="text-muted fs-5">You haven't bookmarked any books yet.</p>
-                        <p class="text-muted">Start exploring books and bookmark your favorites!</p>
-                    </div>
-                </div>`;
-            return;
-        }
-
-        bookmarkSnap.forEach((docSnap) => {
-            const book = docSnap.data();
-            const docId = docSnap.id;
-
-            // Gunakan grid Bootstrap yang konsisten
-            const col = document.createElement('div');
-            col.className = 'col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4';
-            col.innerHTML = `
-                <div class="card h-100 shadow-sm">
-                    <img src="${book.image || 'https://via.placeholder.com/180x250/37295a/ffffff?text=No+Image'}" 
-                         class="card-img-top" 
-                         alt="${book.title}"
-                         loading="lazy">
-                    <div class="card-body">
-                        <h5 class="card-title">${book.title}</h5>
-                        <p class="card-text text-muted">by ${book.author}</p>
-                        <div class="d-flex gap-2 mt-auto">
-                            <button class="btn btn-outline-primary flex-fill view-detail-btn" 
-                                    data-book-id="${book.bookId}" 
-                                    data-title="${book.title}" 
-                                    data-author="${book.author}" 
-                                    data-image="${book.image}">
-                                <i class="bi bi-eye me-1"></i>View
-                            </button>
-                            <button class="btn btn-outline-danger delete-bookmark-btn" 
-                                    data-doc-id="${docId}"
-                                    title="Remove from bookmarks">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            bookmarkList.appendChild(col);
-        });
-
-        // Event untuk tombol "View Details"
-        document.querySelectorAll('.view-detail-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const bookId = btn.getAttribute('data-book-id');
-                const title = btn.getAttribute('data-title');
-                const author = btn.getAttribute('data-author');
-                const image = btn.getAttribute('data-image');
-                
-                // Panggil showDetail dengan data bookmark
-                showDetail(image, title, author, `/works/${bookId}`);
-            });
-        });
-
-        // Event untuk tombol "Remove" dengan konfirmasi
-        document.querySelectorAll('.delete-bookmark-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const docId = btn.getAttribute('data-doc-id');
-                
-                // Tambahkan konfirmasi sebelum menghapus
-                if (confirm('Are you sure you want to remove this book from your bookmarks?')) {
-                    try {
-                        // Tambahkan loading state pada tombol
-                        btn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
-                        btn.disabled = true;
-                        
-                        await deleteDoc(doc(db, 'bookmarks', docId));
-                        loadBookmarkedBooks(); // Refresh setelah hapus
-                    } catch (error) {
-                        console.error('Error removing bookmark:', error);
-                        alert('Failed to remove bookmark. Please try again.');
-                        
-                        // Restore tombol jika gagal
-                        btn.innerHTML = '<i class="bi bi-trash"></i>';
-                        btn.disabled = false;
-                    }
-                }
-            });
-        });
-
-    } catch (error) {
-        console.error('Error loading bookmarks:', error);
-        bookmarkList.innerHTML = `
-            <div class="col-12">
-                <div class="text-center p-5">
-                    <i class="bi bi-exclamation-triangle display-1 text-warning mb-3"></i>
-                    <p class="text-muted fs-5">Error loading bookmarks.</p>
-                    <button class="btn btn-primary" onclick="loadBookmarkedBooks()">Try Again</button>
-                </div>
-            </div>`;
+        loadMoreBtn.onclick = () => {
+            isExpanded = !isExpanded;
+            if (isExpanded) {
+                descElement.textContent = description;
+                loadMoreBtn.textContent = "Load Less";
+            } else {
+                descElement.textContent = shortDesc;
+                loadMoreBtn.textContent = "Load More";
+            }
+        };
     }
 }
 
+// Make functions globally available if needed
+window.showDetail = showDetail;
+window.loadBookmarkedBooks = loadBookmarkedBooks;
+window.addBookmark = addBookmark;   

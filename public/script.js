@@ -146,13 +146,30 @@ async function loadBookmarkedBooks() {
                 const deleteBtn = col.querySelector('.delete-bookmark-btn');
 
                 if (viewBtn) {
-                    viewBtn.addEventListener('click', () => {
-                        showDetail(coverUrl, title, author, `/works/${bookId}`);
+                    viewBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // Extract data from button attributes
+                        const bookId = viewBtn.getAttribute('data-book-id');
+                        const title = viewBtn.getAttribute('data-title');
+                        const author = viewBtn.getAttribute('data-author');
+                        const image = viewBtn.getAttribute('data-image');
+                        
+                        // Call showDetail with proper book key format
+                        const bookKey = `/works/${bookId}`;
+                        showDetail(image, title, author, bookKey);
+                        
+                        // Switch to genre section to show the detail panel
+                        showSection('genre');
                     });
                 }
 
                 if (deleteBtn) {
-                    deleteBtn.addEventListener('click', async () => {
+                    deleteBtn.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
                         try {
                             await deleteDoc(doc(db, 'bookmarks', docId));
                             loadBookmarkedBooks(); // Refresh setelah hapus
@@ -189,7 +206,10 @@ async function loadBookmarkedBooks() {
                 // Still attach delete event
                 const deleteBtn = col.querySelector('.delete-bookmark-btn');
                 if (deleteBtn) {
-                    deleteBtn.addEventListener('click', async () => {
+                    deleteBtn.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
                         try {
                             await deleteDoc(doc(db, 'bookmarks', docId));
                             loadBookmarkedBooks();
@@ -307,8 +327,8 @@ function showSection(targetSection) {
         }
     });
 
-    // Reset layout when switching away from detail view
-    if (mainWrapper && bookDetailSection) {
+    // Don't reset layout when switching to genre section if detail is active
+    if (targetSection !== 'genre' && mainWrapper && bookDetailSection) {
         mainWrapper.classList.remove('split');
         bookDetailSection.classList.remove('active');
     }
@@ -327,6 +347,134 @@ function showSection(targetSection) {
         if (targetSection === 'bookmark') {
             loadBookmarkedBooks();
         }
+    }
+}
+
+// ========== BOOK DETAIL FUNCTIONS ==========
+
+// Show book detail dengan bookmark functionality yang konsisten
+async function showDetail(image, title, author, key) {
+    currentBookKey = key;
+    const reviewForm = document.getElementById('reviewForm');
+    if (reviewForm) reviewForm.setAttribute('book-id', key);
+
+    const detailImg = document.getElementById('detail-img');
+    const detailTitle = document.getElementById('detail-title');
+    const detailAuthor = document.getElementById('detail-author');
+    const detailDescription = document.getElementById('detail-description');
+    const mainWrapper = document.getElementById('main-wrapper');
+    const bookDetail = document.getElementById('book-detail');
+
+    if (detailImg) detailImg.src = image;
+    if (detailTitle) detailTitle.textContent = title;
+    if (detailAuthor) detailAuthor.textContent = author;
+    if (detailDescription) detailDescription.textContent = "Loading description...";
+
+    if (mainWrapper) mainWrapper.classList.add('split');
+    if (bookDetail) bookDetail.classList.add('active');
+
+    // Render reviews
+    if (typeof renderReviews === 'function') {
+        renderReviews(key);
+    }
+
+    // Fetch book description
+    fetch(`https://openlibrary.org${key}.json`)
+        .then(res => res.json())
+        .then(data => {
+            const desc = typeof data.description === 'string'
+                ? data.description
+                : data.description?.value || 'No description available.';
+            updateDescription(desc);
+        })
+        .catch(err => {
+            console.error('Failed to load description:', err);
+            if (detailDescription) detailDescription.textContent = 'No description available.';
+        });
+
+    // Handle bookmark button dengan struktur database yang konsisten
+    const bookmarkBtn = document.getElementById("bookmarkBtn");
+    if (bookmarkBtn) {
+        if (!currentUser) {
+            bookmarkBtn.style.display = "none";
+            return;
+        }
+
+        // Cek apakah buku sudah di-bookmark (konsisten dengan struktur baru)
+        const bookmarkRef = collection(db, "bookmarks");
+        const q = query(bookmarkRef, 
+            where("userId", "==", currentUser.uid), 
+            where("bookId", "==", key.replace('/works/', ''))
+        );
+        const querySnapshot = await getDocs(q);
+        
+        let isBookmarked = !querySnapshot.empty;
+        let bookmarkDocId = null;
+        
+        if (isBookmarked) {
+            bookmarkDocId = querySnapshot.docs[0].id;
+        }
+
+        bookmarkBtn.textContent = isBookmarked ? "★ Bookmarked" : "☆ Bookmark";
+        bookmarkBtn.style.display = "inline-block";
+
+        bookmarkBtn.onclick = async () => {
+            if (!currentUser) return alert("Please log in to bookmark.");
+
+            if (isBookmarked && bookmarkDocId) {
+                // Hapus bookmark
+                await deleteDoc(doc(db, "bookmarks", bookmarkDocId));
+                bookmarkBtn.textContent = "☆ Bookmark";
+                isBookmarked = false;
+                bookmarkDocId = null;
+            } else {
+                // Tambah bookmark - hanya simpan ID (konsistent dengan Flutter)
+                const bookmarkData = {
+                    userId: currentUser.uid,
+                    bookId: key.replace('/works/', ''),
+                    createdAt: serverTimestamp()
+                    // Tidak simpan title, author, image - akan diambil dari API saat load
+                };
+                
+                const docRef = await addDoc(collection(db, "bookmarks"), bookmarkData);
+                bookmarkBtn.textContent = "★ Bookmarked";
+                isBookmarked = true;
+                bookmarkDocId = docRef.id;
+            }
+        };
+    }
+}
+
+// Description expand/collapse functionality
+function updateDescription(description) {
+    const descElement = document.getElementById('detail-description');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+
+    if (!descElement) return;
+
+    const maxLength = 300;
+    let isExpanded = false;
+
+    const shortDesc = description.length > maxLength
+        ? description.slice(0, maxLength) + "..."
+        : description;
+
+    descElement.textContent = shortDesc;
+    
+    if (loadMoreBtn) {
+        loadMoreBtn.style.display = description.length > maxLength ? 'inline' : 'none';
+        loadMoreBtn.textContent = "Load More";
+
+        loadMoreBtn.onclick = () => {
+            isExpanded = !isExpanded;
+            if (isExpanded) {
+                descElement.textContent = description;
+                loadMoreBtn.textContent = "Load Less";
+            } else {
+                descElement.textContent = shortDesc;
+                loadMoreBtn.textContent = "Load More";
+            }
+        };
     }
 }
 
@@ -466,135 +614,7 @@ window.addEventListener("DOMContentLoaded", function () {
     }
 });
 
-// ========== BOOK DETAIL FUNCTIONS ==========
-
-// Show book detail dengan bookmark functionality yang konsisten
-async function showDetail(image, title, author, key) {
-    currentBookKey = key;
-    const reviewForm = document.getElementById('reviewForm');
-    if (reviewForm) reviewForm.setAttribute('book-id', key);
-
-    const detailImg = document.getElementById('detail-img');
-    const detailTitle = document.getElementById('detail-title');
-    const detailAuthor = document.getElementById('detail-author');
-    const detailDescription = document.getElementById('detail-description');
-    const mainWrapper = document.getElementById('main-wrapper');
-    const bookDetail = document.getElementById('book-detail');
-
-    if (detailImg) detailImg.src = image;
-    if (detailTitle) detailTitle.textContent = title;
-    if (detailAuthor) detailAuthor.textContent = author;
-    if (detailDescription) detailDescription.textContent = "Loading description...";
-
-    if (mainWrapper) mainWrapper.classList.add('split');
-    if (bookDetail) bookDetail.classList.add('active');
-
-    // Render reviews
-    if (typeof renderReviews === 'function') {
-        renderReviews(key);
-    }
-
-    // Fetch book description
-    fetch(`https://openlibrary.org${key}.json`)
-        .then(res => res.json())
-        .then(data => {
-            const desc = typeof data.description === 'string'
-                ? data.description
-                : data.description?.value || 'No description available.';
-            updateDescription(desc);
-        })
-        .catch(err => {
-            console.error('Failed to load description:', err);
-            if (detailDescription) detailDescription.textContent = 'No description available.';
-        });
-
-    // Handle bookmark button dengan struktur database yang konsisten
-    const bookmarkBtn = document.getElementById("bookmarkBtn");
-    if (bookmarkBtn) {
-        if (!currentUser) {
-            bookmarkBtn.style.display = "none";
-            return;
-        }
-
-        // Cek apakah buku sudah di-bookmark (konsisten dengan struktur baru)
-        const bookmarkRef = collection(db, "bookmarks");
-        const q = query(bookmarkRef, 
-            where("userId", "==", currentUser.uid), 
-            where("bookId", "==", key.replace('/works/', ''))
-        );
-        const querySnapshot = await getDocs(q);
-        
-        let isBookmarked = !querySnapshot.empty;
-        let bookmarkDocId = null;
-        
-        if (isBookmarked) {
-            bookmarkDocId = querySnapshot.docs[0].id;
-        }
-
-        bookmarkBtn.textContent = isBookmarked ? "★ Bookmarked" : "☆ Bookmark";
-        bookmarkBtn.style.display = "inline-block";
-
-        bookmarkBtn.onclick = async () => {
-            if (!currentUser) return alert("Please log in to bookmark.");
-
-            if (isBookmarked && bookmarkDocId) {
-                // Hapus bookmark
-                await deleteDoc(doc(db, "bookmarks", bookmarkDocId));
-                bookmarkBtn.textContent = "☆ Bookmark";
-                isBookmarked = false;
-                bookmarkDocId = null;
-            } else {
-                // Tambah bookmark - hanya simpan ID (konsistent dengan Flutter)
-                const bookmarkData = {
-                    userId: currentUser.uid,
-                    bookId: key.replace('/works/', ''),
-                    createdAt: serverTimestamp()
-                    // Tidak simpan title, author, image - akan diambil dari API saat load
-                };
-                
-                const docRef = await addDoc(collection(db, "bookmarks"), bookmarkData);
-                bookmarkBtn.textContent = "★ Bookmarked";
-                isBookmarked = true;
-                bookmarkDocId = docRef.id;
-            }
-        };
-    }
-}
-
-// Description expand/collapse functionality
-function updateDescription(description) {
-    const descElement = document.getElementById('detail-description');
-    const loadMoreBtn = document.getElementById('loadMoreBtn');
-
-    if (!descElement) return;
-
-    const maxLength = 300;
-    let isExpanded = false;
-
-    const shortDesc = description.length > maxLength
-        ? description.slice(0, maxLength) + "..."
-        : description;
-
-    descElement.textContent = shortDesc;
-    
-    if (loadMoreBtn) {
-        loadMoreBtn.style.display = description.length > maxLength ? 'inline' : 'none';
-        loadMoreBtn.textContent = "Load More";
-
-        loadMoreBtn.onclick = () => {
-            isExpanded = !isExpanded;
-            if (isExpanded) {
-                descElement.textContent = description;
-                loadMoreBtn.textContent = "Load Less";
-            } else {
-                descElement.textContent = shortDesc;
-                loadMoreBtn.textContent = "Load More";
-            }
-        };
-    }
-}
-
 // Make functions globally available if needed
 window.showDetail = showDetail;
 window.loadBookmarkedBooks = loadBookmarkedBooks;
-window.addBookmark = addBookmark;   
+window.addBookmark = addBookmark;
